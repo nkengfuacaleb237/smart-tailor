@@ -4,9 +4,14 @@ import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import '../app_state.dart';
+
+const _base = 'https://smart-tailor-backend-mi4z.onrender.com';
 
 class CameraMeasurementScreen extends StatefulWidget {
-  const CameraMeasurementScreen({super.key});
+  final int? tailorCustomerId; // set when tailor is scanning a customer
+  const CameraMeasurementScreen({super.key, this.tailorCustomerId});
 
   @override
   State<CameraMeasurementScreen> createState() => _CameraMeasurementScreenState();
@@ -57,7 +62,7 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
       if (_cameras.isEmpty) return;
       await _startCamera(_cameraIndex);
     } catch (e) {
-      debugPrint('Camera init error: ' + e.toString());
+      debugPrint('Camera init error: $e');
     }
   }
 
@@ -107,7 +112,7 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
         setState(() => _detectedPose = poses.first);
       }
     } catch (e) {
-      debugPrint('Pose error: ' + e.toString());
+      debugPrint('Pose error: $e');
     }
     _isDetecting = false;
   }
@@ -122,25 +127,13 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
       return sqrt(pow(pa.x - pb.x, 2) + pow(pa.y - pb.y, 2));
     }
 
-    final shoulderWidth = dist(
-        PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder);
-    final hipWidth =
-        dist(PoseLandmarkType.leftHip, PoseLandmarkType.rightHip);
+    final shoulderWidth = dist(PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder);
+    final hipWidth = dist(PoseLandmarkType.leftHip, PoseLandmarkType.rightHip);
     final leftShoulder = lm[PoseLandmarkType.leftShoulder];
     final leftHip = lm[PoseLandmarkType.leftHip];
-    final leftKnee = lm[PoseLandmarkType.leftKnee];
     final leftAnkle = lm[PoseLandmarkType.leftAnkle];
     final leftWrist = lm[PoseLandmarkType.leftWrist];
-
-    double torsoHeight = 0;
-    if (leftShoulder != null && leftHip != null) {
-      torsoHeight = (leftHip.y - leftShoulder.y).abs();
-    }
-
-    double legLength = 0;
-    if (leftHip != null && leftAnkle != null) {
-      legLength = (leftAnkle.y - leftHip.y).abs();
-    }
+    final leftKnee = lm[PoseLandmarkType.leftKnee];
 
     double sleeveLength = 0;
     if (leftShoulder != null && leftWrist != null) {
@@ -149,7 +142,7 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
     }
 
     double inseam = 0;
-    if (leftKnee != null && leftAnkle != null && leftHip != null) {
+    if (leftHip != null && leftAnkle != null) {
       inseam = (leftAnkle.y - leftHip.y).abs() * 0.75;
     }
 
@@ -184,27 +177,49 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
       _isAnalyzing = false;
       _isDone = true;
     });
-    _saveMeasurements();
+    await _saveMeasurements();
   }
 
   Future<void> _saveMeasurements() async {
     try {
-      await http.post(
-        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/measurements/'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'customer_id': 1,
-          'chest': _measurements['chest'],
-          'waist': _measurements['waist'],
-          'hips': _measurements['hips'],
-          'shoulder': _measurements['shoulder'],
-          'sleeve': _measurements['sleeve'],
-          'inseam': _measurements['inseam'],
-          'notes': 'Scanned via Smart Tailor AI',
-        }),
-      );
+      final body = jsonEncode({
+        'chest': _measurements['chest'],
+        'waist': _measurements['waist'],
+        'hips': _measurements['hips'],
+        'shoulder': _measurements['shoulder'],
+        'sleeve': _measurements['sleeve'],
+        'inseam': _measurements['inseam'],
+        'label': 'AI Camera Scan',
+        'notes': 'Scanned via Smart Tailor AI',
+      });
+
+      if (widget.tailorCustomerId != null) {
+        // Tailor scanning a customer — save to tailor customer measurements
+        await http.post(
+          Uri.parse('$_base/api/tailor-customers/${widget.tailorCustomerId}/measurements'),
+          headers: {'Content-Type': 'application/json'},
+          body: body,
+        );
+      } else {
+        // Customer scanning themselves — save to their own measurements
+        final appState = Provider.of<AppState>(context, listen: false);
+        await http.post(
+          Uri.parse('$_base/api/measurements/'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'user_id': appState.userId,
+            'chest': _measurements['chest'],
+            'waist': _measurements['waist'],
+            'hips': _measurements['hips'],
+            'shoulder': _measurements['shoulder'],
+            'sleeve': _measurements['sleeve'],
+            'inseam': _measurements['inseam'],
+            'notes': 'Scanned via Smart Tailor AI',
+          }),
+        );
+      }
     } catch (e) {
-      debugPrint('Save error: ' + e.toString());
+      debugPrint('Save error: $e');
     }
   }
 
@@ -318,8 +333,7 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
           ),
         if (_cameraReady && _detectedPose != null)
           Positioned(
-            top: 70,
-            left: 0, right: 0,
+            top: 70, left: 0, right: 0,
             child: Center(
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
@@ -343,7 +357,7 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
                   const CircularProgressIndicator(
                     color: Color(0xFF1B5E20), strokeWidth: 2),
                   const SizedBox(height: 16),
-                  const Text('AI is calculating your measurements...',
+                  const Text('AI is calculating measurements...',
                     style: TextStyle(color: Colors.white, fontSize: 15)),
                 ] else ...[
                   Container(
@@ -440,13 +454,9 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
               style: TextStyle(fontSize: 32, fontWeight: FontWeight.w700,
                 color: Color(0xFF1C1C1E), letterSpacing: -1)),
             const SizedBox(height: 8),
-            const Text('AI measurements saved successfully',
+            const Text('Measurements saved successfully',
               style: TextStyle(fontSize: 16, color: Color(0xFF8E8E93))),
             const SizedBox(height: 32),
-            const Text('Your Measurements',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700,
-                color: Color(0xFF1C1C1E), letterSpacing: -0.5)),
-            const SizedBox(height: 16),
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -463,12 +473,10 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              e.key[0].toUpperCase() + e.key.substring(1),
+                            Text(e.key[0].toUpperCase() + e.key.substring(1),
                               style: const TextStyle(fontSize: 15,
                                 color: Color(0xFF3A3A3C))),
-                            Text(
-                              e.value.toString() + ' cm',
+                            Text('${e.value} cm',
                               style: const TextStyle(fontSize: 15,
                                 fontWeight: FontWeight.w600,
                                 color: Color(0xFF1B5E20))),
@@ -521,7 +529,7 @@ class PoseOverlayPainter extends CustomPainter {
       ..color = const Color(0xFFFFC107)
       ..style = PaintingStyle.fill;
 
-    Offset _point(PoseLandmarkType type) {
+    Offset point(PoseLandmarkType type) {
       final lm = pose.landmarks[type];
       if (lm == null) return Offset.zero;
       final x = lm.x / imageSize.width * screenSize.width;
@@ -529,11 +537,11 @@ class PoseOverlayPainter extends CustomPainter {
       return Offset(x, y);
     }
 
-    void _line(PoseLandmarkType a, PoseLandmarkType b) {
+    void line(PoseLandmarkType a, PoseLandmarkType b) {
       final pa = pose.landmarks[a];
       final pb = pose.landmarks[b];
       if (pa == null || pb == null) return;
-      canvas.drawLine(_point(a), _point(b), paint);
+      canvas.drawLine(point(a), point(b), paint);
     }
 
     final connections = [
@@ -554,7 +562,7 @@ class PoseOverlayPainter extends CustomPainter {
     ];
 
     for (final c in connections) {
-      _line(c[0], c[1]);
+      line(c[0], c[1]);
     }
 
     for (final lm in pose.landmarks.values) {
