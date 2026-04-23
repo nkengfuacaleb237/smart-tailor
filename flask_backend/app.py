@@ -14,6 +14,7 @@ from routes.styles import styles_bp
 from routes.users import users_bp
 from routes.posts import posts_bp
 from routes.tailor_customers import tailor_customers_bp
+from routes.orders import orders_bp
 
 app.register_blueprint(customers_bp, url_prefix="/api/customers")
 app.register_blueprint(measurements_bp, url_prefix="/api/measurements")
@@ -21,6 +22,7 @@ app.register_blueprint(styles_bp, url_prefix="/api/styles")
 app.register_blueprint(users_bp, url_prefix="/api/users")
 app.register_blueprint(posts_bp, url_prefix="/api/posts")
 app.register_blueprint(tailor_customers_bp, url_prefix="/api/tailor-customers")
+app.register_blueprint(orders_bp, url_prefix="/api/orders")
 
 @app.route("/")
 def home():

@@ -9,5 +9,6 @@ def init_db():
     from models.tailor_customer import TailorCustomer, TailorMeasurement
     from models.favorite import Favorite, TailorDressLink
     from models.customer import Customer
+    from models.order import Order
     db.create_all()
     print("Database initialized!")
