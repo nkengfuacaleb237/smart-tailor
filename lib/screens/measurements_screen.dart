@@ -26,7 +26,7 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
     final userId = Provider.of<AppState>(context, listen: false).userId;
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.171:5000/api/measurements/user/'));
+        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/measurements/user/'));
       setState(() {
         _measurements = jsonDecode(res.body);
         _isLoading = false;
@@ -38,7 +38,7 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
 
   Future<void> _deleteMeasurement(int id) async {
     await http.delete(
-      Uri.parse('http://192.168.1.171:5000/api/measurements/'));
+      Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/measurements/$id'));
     _fetchMeasurements();
   }
 
@@ -111,7 +111,7 @@ class _MeasurementsScreenState extends State<MeasurementsScreen> {
                 child: ElevatedButton(
                   onPressed: () async {
                     await http.put(
-                      Uri.parse('http://192.168.1.171:5000/api/measurements//edit'),
+                      Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/measurements//edit'),
                       headers: {'Content-Type': 'application/json'},
                       body: jsonEncode({
                         'chest': double.tryParse(chestCtrl.text) ?? 0,

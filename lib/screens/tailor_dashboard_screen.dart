@@ -25,7 +25,7 @@ class _TailorDashboardScreenState extends State<TailorDashboardScreen> {
     final tailorId = Provider.of<AppState>(context, listen: false).userId;
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.171:5000/api/tailor-customers/'));
+        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/tailor-customers/'));
       setState(() {
         _customers = jsonDecode(res.body);
         _isLoading = false;
@@ -75,7 +75,7 @@ class _TailorDashboardScreenState extends State<TailorDashboardScreen> {
               child: ElevatedButton(
                 onPressed: () async {
                   await http.post(
-                    Uri.parse('http://192.168.1.171:5000/api/tailor-customers/'),
+                    Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/tailor-customers/'),
                     headers: {'Content-Type': 'application/json'},
                     body: jsonEncode({
                       'tailor_id': tailorId,
@@ -97,7 +97,7 @@ class _TailorDashboardScreenState extends State<TailorDashboardScreen> {
   }
 
   Future<void> _deleteCustomer(int id) async {
-    await http.delete(Uri.parse('http://192.168.1.171:5000/api/tailor-customers/'));
+    await http.delete(Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/tailor-customers/'));
     _fetchCustomers();
   }
 

@@ -26,7 +26,7 @@ class _MyCatalogueScreenState extends State<MyCatalogueScreen> {
     final userId = Provider.of<AppState>(context, listen: false).userId;
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.171:5000/api/posts/favorites/'));
+        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/posts/favorites/'));
       setState(() {
         _favorites = jsonDecode(res.body);
         _isLoading = false;

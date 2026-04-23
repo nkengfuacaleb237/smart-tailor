@@ -26,7 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() { _isLoading = true; _error = ''; });
     try {
       final res = await http.post(
-        Uri.parse('http://192.168.1.171:5000/api/users/'),
+        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/users/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': 'User',

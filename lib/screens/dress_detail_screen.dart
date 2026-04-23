@@ -19,7 +19,7 @@ class _DressDetailScreenState extends State<DressDetailScreen> {
     final userId = Provider.of<AppState>(context, listen: false).userId;
     try {
       final res = await http.post(
-        Uri.parse('http://192.168.1.171:5000/api/posts//favorite'),
+        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/posts//favorite'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'user_id': userId}),
       );

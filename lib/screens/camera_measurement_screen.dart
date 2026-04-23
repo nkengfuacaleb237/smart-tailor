@@ -190,7 +190,7 @@ class _CameraMeasurementScreenState extends State<CameraMeasurementScreen> {
   Future<void> _saveMeasurements() async {
     try {
       await http.post(
-        Uri.parse('http://192.168.1.171:5000/api/measurements/'),
+        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/measurements/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'customer_id': 1,
