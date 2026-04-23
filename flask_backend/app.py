@@ -24,11 +24,12 @@ app.register_blueprint(posts_bp, url_prefix="/api/posts")
 app.register_blueprint(tailor_customers_bp, url_prefix="/api/tailor-customers")
 app.register_blueprint(orders_bp, url_prefix="/api/orders")
 
+with app.app_context():
+    init_db()
+
 @app.route("/")
 def home():
     return {"message": "Smart Tailor API v2"}
 
 if __name__ == "__main__":
-    with app.app_context():
-        init_db()
     app.run(host='0.0.0.0', port=5000, debug=True)
