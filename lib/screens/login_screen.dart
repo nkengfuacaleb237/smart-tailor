@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final res = await http.get(
         Uri.parse(
-          'https://smart-tailor-backend-bzpu.onrender.com/api/users/by-email?email=${Uri.encodeComponent(_emailCtrl.text.trim().toLowerCase())}'),
+          'https://smart-tailor-backend-mi4z.onrender.com/api/users/by-email?email=${Uri.encodeComponent(_emailCtrl.text.trim().toLowerCase())}'),
       );
       if (res.statusCode == 404) {
         setState(() => _error = 'No account found. Please sign up first.');

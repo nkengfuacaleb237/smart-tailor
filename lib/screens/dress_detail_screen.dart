@@ -20,7 +20,7 @@ class _DressDetailScreenState extends State<DressDetailScreen> {
     final userId = Provider.of<AppState>(context, listen: false).userId;
     try {
       final res = await http.post(
-        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/posts/${widget.post['id']}/favorite'),
+        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/${widget.post['id']}/favorite'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'user_id': userId}),
       );
@@ -72,7 +72,7 @@ class _DressDetailScreenState extends State<DressDetailScreen> {
                   setState(() => _ordering = true);
                   try {
                     await http.post(
-                      Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/orders/'),
+                      Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/orders/'),
                       headers: {'Content-Type': 'application/json'},
                       body: jsonEncode({
                         'customer_id': userId,

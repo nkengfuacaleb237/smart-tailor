@@ -32,8 +32,8 @@ class _FeedScreenState extends State<FeedScreen> {
     setState(() => _isLoading = true);
     try {
       final url = _selectedCategory == 'All'
-        ? 'https://smart-tailor-backend-bzpu.onrender.com/api/posts/'
-        : 'https://smart-tailor-backend-bzpu.onrender.com/api/posts/?category=$_selectedCategory';
+        ? 'https://smart-tailor-backend-mi4z.onrender.com/api/posts/'
+        : 'https://smart-tailor-backend-mi4z.onrender.com/api/posts/?category=$_selectedCategory';
       final res = await http.get(Uri.parse(url));
       setState(() {
         _posts = jsonDecode(res.body);

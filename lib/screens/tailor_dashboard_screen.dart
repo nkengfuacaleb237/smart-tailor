@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../app_state.dart';
 
-const _base = 'https://smart-tailor-backend-bzpu.onrender.com';
+const _base = 'https://smart-tailor-backend-mi4z.onrender.com';
 
 class TailorDashboardScreen extends StatefulWidget {
   const TailorDashboardScreen({super.key});

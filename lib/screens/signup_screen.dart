@@ -39,7 +39,7 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() { _isLoading = true; _error = ''; });
     try {
       final res = await http.post(
-        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/users/'),
+        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/users/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': _nameCtrl.text.trim(),

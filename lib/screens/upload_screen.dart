@@ -33,7 +33,7 @@ class _UploadScreenState extends State<UploadScreen> {
     final appState = Provider.of<AppState>(context, listen: false);
     try {
       final res = await http.post(
-        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/posts/'),
+        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'uploader_id': appState.userId,
