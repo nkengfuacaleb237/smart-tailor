@@ -48,3 +48,10 @@ def update_user(id):
 def get_public_tailors():
     tailors = User.query.filter_by(role='tailor', is_public=True).all()
     return jsonify([t.to_dict() for t in tailors])
+@users_bp.route("/by-email", methods=["GET"])
+def get_by_email():
+    email = request.args.get("email", "").lower().strip()
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return jsonify({"error": "Not found"}), 404
+    return jsonify(user.to_dict()), 200

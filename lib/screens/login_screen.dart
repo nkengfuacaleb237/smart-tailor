@@ -25,23 +25,22 @@ class _LoginScreenState extends State<LoginScreen> {
     }
     setState(() { _isLoading = true; _error = ''; });
     try {
-      final res = await http.post(
-        Uri.parse('https://smart-tailor-backend-bzpu.onrender.com/api/users/'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'name': 'User',
-          'email': _emailCtrl.text.trim().toLowerCase(),
-          'role': 'customer',
-        }),
+      final res = await http.get(
+        Uri.parse(
+          'https://smart-tailor-backend-bzpu.onrender.com/api/users/by-email?email=${Uri.encodeComponent(_emailCtrl.text.trim().toLowerCase())}'),
       );
-      final user = jsonDecode(res.body);
-      if (mounted) {
-        Provider.of<AppState>(context, listen: false).setUser(user);
-        Navigator.pushReplacement(context,
-          MaterialPageRoute(builder: (_) => const MainShell()));
+      if (res.statusCode == 404) {
+        setState(() => _error = 'No account found. Please sign up first.');
+      } else {
+        final user = jsonDecode(res.body);
+        if (mounted) {
+          Provider.of<AppState>(context, listen: false).setUser(user);
+          Navigator.pushReplacement(context,
+            MaterialPageRoute(builder: (_) => const MainShell()));
+        }
       }
     } catch (e) {
-      setState(() => _error = 'Connection error. Is Flask running?');
+      setState(() => _error = 'Connection error. Check your internet.');
     }
     setState(() => _isLoading = false);
   }
