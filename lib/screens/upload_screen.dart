@@ -16,6 +16,8 @@ class UploadScreen extends StatefulWidget {
 class _UploadScreenState extends State<UploadScreen> {
   final _titleCtrl = TextEditingController();
   final _descCtrl = TextEditingController();
+  final _priceCtrl = TextEditingController();
+  final _daysCtrl = TextEditingController(text: '7');
   String _selectedCategory = 'Ankara';
   bool _isPublic = true;
   bool _isLoading = false;
@@ -59,14 +61,16 @@ class _UploadScreenState extends State<UploadScreen> {
       setState(() => _error = 'Please enter a style title');
       return;
     }
+    if (_priceCtrl.text.trim().isEmpty) {
+      setState(() => _error = 'Please enter a price in FCFA');
+      return;
+    }
     setState(() { _isLoading = true; _error = ''; });
     final appState = Provider.of<AppState>(context, listen: false);
     try {
-      // Upload image to Cloudinary first if selected
       if (_imageFile != null) {
         _imageUrl = await _uploadToCloudinary(_imageFile!);
       }
-
       final res = await http.post(
         Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/'),
         headers: {'Content-Type': 'application/json'},
@@ -79,6 +83,8 @@ class _UploadScreenState extends State<UploadScreen> {
           'link_tailor': true,
           'tailor_id': appState.userId,
           'image_url': _imageUrl ?? '',
+          'price': double.tryParse(_priceCtrl.text) ?? 0,
+          'estimated_days': int.tryParse(_daysCtrl.text) ?? 7,
         }),
       );
       if (res.statusCode == 201) {
@@ -89,7 +95,7 @@ class _UploadScreenState extends State<UploadScreen> {
           Navigator.pop(context, true);
         }
       } else {
-        setState(() => _error = 'Upload failed (${res.statusCode}). Try again.');
+        setState(() => _error = 'Upload failed. Try again.');
       }
     } catch (e) {
       setState(() => _error = 'Connection error. Check your internet.');
@@ -99,6 +105,7 @@ class _UploadScreenState extends State<UploadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
     return Scaffold(
       backgroundColor: const Color(0xFFF2F2F7),
       appBar: AppBar(title: const Text('Upload Style')),
@@ -160,6 +167,30 @@ class _UploadScreenState extends State<UploadScreen> {
                       labelText: 'Description (optional)',
                       prefixIcon: Icon(Icons.notes_outlined, color: Color(0xFF1B5E20))),
                   ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _priceCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Price (FCFA) *',
+                            prefixIcon: Icon(Icons.payments_outlined, color: Color(0xFF1B5E20))),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: _daysCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Days to complete',
+                            prefixIcon: Icon(Icons.schedule_outlined, color: Color(0xFF1B5E20))),
+                        ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -207,6 +238,25 @@ class _UploadScreenState extends State<UploadScreen> {
                     value: _isPublic,
                     onChanged: (v) => setState(() => _isPublic = v),
                     activeColor: const Color(0xFF1B5E20),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFE8F5E9),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Color(0xFF1B5E20), size: 20),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Posted as: ${appState.currentUser?['name'] ?? ''}\nLocation: ${appState.currentUser?['location'] ?? 'Not set'}\nContact: ${appState.currentUser?['contact_info'] ?? 'Not set'}',
+                      style: const TextStyle(color: Color(0xFF1B5E20), fontSize: 13, height: 1.5)),
                   ),
                 ],
               ),

@@ -20,8 +20,14 @@ def get_posts():
         for link in p.tailor_links:
             t = User.query.get(link.tailor_id)
             if t and t.is_public:
-                tailors.append({'id': t.id, 'name': t.name, 'contact_info': t.contact_info,
-                                'location': t.location, 'years_experience': t.years_experience})
+                tailors.append({
+                    'id': t.id,
+                    'name': t.name,
+                    'contact_info': t.contact_info,
+                    'location': t.location,
+                    'years_experience': t.years_experience,
+                    'phone': t.phone,
+                })
         d['tailors'] = tailors
         result.append(d)
     return jsonify(result)
@@ -35,6 +41,8 @@ def create_post():
         description=data.get("description", ""),
         category=data["category"],
         image_url=data.get("image_url", ""),
+        price=data.get("price", 0),
+        estimated_days=data.get("estimated_days", 7),
         is_public=data.get("is_public", True),
     )
     db.session.add(post)
@@ -75,11 +83,3 @@ def get_favorites(user_id):
         if post:
             result.append(post.to_dict())
     return jsonify(result)
-
-@posts_bp.route("/tailor/<int:tailor_id>/link", methods=["POST"])
-def link_tailor_to_post():
-    data = request.get_json()
-    link = TailorDressLink(tailor_id=data["tailor_id"], post_id=data["post_id"])
-    db.session.add(link)
-    db.session.commit()
-    return jsonify(link.to_dict()), 201
