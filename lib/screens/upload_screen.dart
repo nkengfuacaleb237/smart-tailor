@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
 import '../app_state.dart';
 
 class UploadScreen extends StatefulWidget {
@@ -18,11 +20,39 @@ class _UploadScreenState extends State<UploadScreen> {
   bool _isPublic = true;
   bool _isLoading = false;
   String _error = '';
+  File? _imageFile;
+  String? _imageUrl;
 
   final List<String> _categories = [
     'Ankara', 'Kaftan', 'Formal', 'Casual', 'Wedding',
     'Traditional', 'Corporate', 'Evening', 'Kids', 'Sportswear'
   ];
+
+  Future<void> _pickImage() async {
+    final picker = ImagePicker();
+    final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 70);
+    if (picked != null) {
+      setState(() => _imageFile = File(picked.path));
+    }
+  }
+
+  Future<String?> _uploadToCloudinary(File file) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('https://api.cloudinary.com/v1_1/ds9mzohwn/image/upload'),
+      );
+      request.fields['upload_preset'] = 'smart-tailor';
+      request.files.add(await http.MultipartFile.fromPath('file', file.path));
+      final response = await request.send();
+      final body = await response.stream.bytesToString();
+      final data = jsonDecode(body);
+      return data['secure_url'];
+    } catch (e) {
+      debugPrint('Cloudinary error: $e');
+      return null;
+    }
+  }
 
   Future<void> _upload() async {
     if (_titleCtrl.text.trim().isEmpty) {
@@ -32,22 +62,25 @@ class _UploadScreenState extends State<UploadScreen> {
     setState(() { _isLoading = true; _error = ''; });
     final appState = Provider.of<AppState>(context, listen: false);
     try {
-      final body = jsonEncode({
-        'uploader_id': appState.userId,
-        'title': _titleCtrl.text.trim(),
-        'description': _descCtrl.text.trim(),
-        'category': _selectedCategory,
-        'is_public': _isPublic,
-        'link_tailor': true,
-        'tailor_id': appState.userId,
-      });
-      debugPrint('Uploading: $body');
+      // Upload image to Cloudinary first if selected
+      if (_imageFile != null) {
+        _imageUrl = await _uploadToCloudinary(_imageFile!);
+      }
+
       final res = await http.post(
         Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/'),
         headers: {'Content-Type': 'application/json'},
-        body: body,
+        body: jsonEncode({
+          'uploader_id': appState.userId,
+          'title': _titleCtrl.text.trim(),
+          'description': _descCtrl.text.trim(),
+          'category': _selectedCategory,
+          'is_public': _isPublic,
+          'link_tailor': true,
+          'tailor_id': appState.userId,
+          'image_url': _imageUrl ?? '',
+        }),
       );
-      debugPrint('Response: ${res.statusCode} ${res.body}');
       if (res.statusCode == 201) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -59,8 +92,7 @@ class _UploadScreenState extends State<UploadScreen> {
         setState(() => _error = 'Upload failed (${res.statusCode}). Try again.');
       }
     } catch (e) {
-      debugPrint('Upload error: $e');
-      setState(() => _error = 'Connection error: $e');
+      setState(() => _error = 'Connection error. Check your internet.');
     }
     setState(() => _isLoading = false);
   }
@@ -75,23 +107,34 @@ class _UploadScreenState extends State<UploadScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              height: 180,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFFE5E5EA)),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.add_photo_alternate_outlined,
-                    size: 48, color: const Color(0xFF1B5E20).withOpacity(0.4)),
-                  const SizedBox(height: 8),
-                  const Text('Photo upload coming soon',
-                    style: TextStyle(color: Color(0xFF8E8E93), fontSize: 14)),
-                ],
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFFE5E5EA)),
+                ),
+                child: _imageFile != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(_imageFile!, fit: BoxFit.cover))
+                  : Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.add_photo_alternate_outlined,
+                          size: 48, color: const Color(0xFF1B5E20).withOpacity(0.5)),
+                        const SizedBox(height: 8),
+                        const Text('Tap to select photo',
+                          style: TextStyle(color: Color(0xFF1B5E20),
+                            fontWeight: FontWeight.w600, fontSize: 15)),
+                        const SizedBox(height: 4),
+                        const Text('JPG, PNG supported',
+                          style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12)),
+                      ],
+                    ),
               ),
             ),
             const SizedBox(height: 20),
@@ -192,8 +235,14 @@ class _UploadScreenState extends State<UploadScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _upload,
                 child: _isLoading
-                  ? const SizedBox(width: 20, height: 20,
-                      child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                  ? const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(width: 20, height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
+                        SizedBox(width: 12),
+                        Text('Uploading...'),
+                      ])
                   : const Text('UPLOAD STYLE'),
               ),
             ),

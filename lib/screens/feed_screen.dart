@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../app_state.dart';
+import '../widgets/style_card.dart';
 import 'dress_detail_screen.dart';
 import 'upload_screen.dart';
 
@@ -29,17 +30,20 @@ class _FeedScreenState extends State<FeedScreen> {
   }
 
   Future<void> _fetchPosts() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final url = _selectedCategory == 'All'
         ? 'https://smart-tailor-backend-mi4z.onrender.com/api/posts/'
         : 'https://smart-tailor-backend-mi4z.onrender.com/api/posts/?category=$_selectedCategory';
       final res = await http.get(Uri.parse(url));
+      if (!mounted) return;
       setState(() {
         _posts = jsonDecode(res.body);
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -151,68 +155,12 @@ class _FeedScreenState extends State<FeedScreen> {
                           childAspectRatio: 0.75,
                         ),
                         itemCount: _posts.length,
-                        itemBuilder: (ctx, i) {
-                          final post = _posts[i];
-                          return GestureDetector(
-                            onTap: () => Navigator.push(context,
-                              MaterialPageRoute(builder: (_) =>
-                                DressDetailScreen(post: post))),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFE8F5E9),
-                                        borderRadius: const BorderRadius.vertical(
-                                          top: Radius.circular(16)),
-                                      ),
-                                      child: Center(
-                                        child: Icon(Icons.checkroom_outlined,
-                                          size: 48,
-                                          color: const Color(0xFF1B5E20).withOpacity(0.4)),
-                                      ),
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(10),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(post['title'] ?? '',
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 13,
-                                            color: Color(0xFF1C1C1E)),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 8, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFE8F5E9),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Text(post['category'] ?? '',
-                                            style: const TextStyle(
-                                              fontSize: 10,
-                                              color: Color(0xFF1B5E20),
-                                              fontWeight: FontWeight.w600)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          );
-                        },
+                        itemBuilder: (ctx, i) => StyleCard(
+                          post: _posts[i],
+                          onTap: () => Navigator.push(context,
+                            MaterialPageRoute(builder: (_) =>
+                              DressDetailScreen(post: _posts[i]))),
+                        ),
                       ),
                     ),
             ),

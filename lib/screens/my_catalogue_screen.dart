@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../app_state.dart';
+import '../widgets/style_card.dart';
 import 'dress_detail_screen.dart';
 
 class MyCatalogueScreen extends StatefulWidget {
@@ -25,13 +26,15 @@ class _MyCatalogueScreenState extends State<MyCatalogueScreen> {
   Future<void> _fetchFavorites() async {
     final userId = Provider.of<AppState>(context, listen: false).userId;
     try {
-      final res = await http.get(
-        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/favorites/$userId'));
+      final res = await http.get(Uri.parse(
+        'https://smart-tailor-backend-mi4z.onrender.com/api/posts/favorites/$userId'));
+      if (!mounted) return;
       setState(() {
         _favorites = jsonDecode(res.body);
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -57,86 +60,36 @@ class _MyCatalogueScreenState extends State<MyCatalogueScreen> {
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.favorite_outline, size: 60, color: Color(0xFFE5E5EA)),
-                          const SizedBox(height: 16),
-                          const Text('No saved styles yet',
+                        children: const [
+                          Icon(Icons.favorite_outline, size: 60, color: Color(0xFFE5E5EA)),
+                          SizedBox(height: 16),
+                          Text('No saved styles yet',
                             style: TextStyle(color: Color(0xFF8E8E93), fontSize: 16)),
-                          const SizedBox(height: 8),
-                          const Text('Heart styles from the feed to save them here',
+                          SizedBox(height: 8),
+                          Text('Heart styles from the feed to save them here',
                             style: TextStyle(color: Color(0xFFAAAAAA), fontSize: 13)),
                         ],
                       ),
                     )
-                  : GridView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemCount: _favorites.length,
-                      itemBuilder: (ctx, i) {
-                        final post = _favorites[i];
-                        return GestureDetector(
+                  : RefreshIndicator(
+                      onRefresh: _fetchFavorites,
+                      color: const Color(0xFF1B5E20),
+                      child: GridView.builder(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.75,
+                        ),
+                        itemCount: _favorites.length,
+                        itemBuilder: (ctx, i) => StyleCard(
+                          post: _favorites[i],
                           onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) =>
-                              DressDetailScreen(post: post))),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Container(
-                                    decoration: const BoxDecoration(
-                                      color: Color(0xFFE8F5E9),
-                                      borderRadius: BorderRadius.vertical(
-                                        top: Radius.circular(16)),
-                                    ),
-                                    child: Center(
-                                      child: Icon(Icons.checkroom_outlined,
-                                        size: 48,
-                                        color: const Color(0xFF1B5E20).withOpacity(0.4)),
-                                    ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(post['title'] ?? '',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.w600,
-                                          fontSize: 13, color: Color(0xFF1C1C1E)),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8, vertical: 3),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE8F5E9),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: Text(post['category'] ?? '',
-                                          style: const TextStyle(fontSize: 10,
-                                            color: Color(0xFF1B5E20),
-                                            fontWeight: FontWeight.w600)),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
+                              DressDetailScreen(post: _favorites[i]))),
+                        ),
+                      ),
                     ),
             ),
           ],
