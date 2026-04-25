@@ -15,7 +15,6 @@ def get_posts():
         posts = DressPost.query.filter_by(is_public=True).order_by(DressPost.created_at.desc()).all()
     result = []
     for p in posts:
-        d = p.to_dict()
         tailors = []
         for link in p.tailor_links:
             t = User.query.get(link.tailor_id)
@@ -28,8 +27,11 @@ def get_posts():
                     'years_experience': t.years_experience,
                     'phone': t.phone,
                 })
-        d['tailors'] = tailors
-        result.append(d)
+        # Only show posts that have at least one linked tailor
+        if len(tailors) > 0:
+            d = p.to_dict()
+            d['tailors'] = tailors
+            result.append(d)
     return jsonify(result)
 
 @posts_bp.route("/", methods=["POST"])
