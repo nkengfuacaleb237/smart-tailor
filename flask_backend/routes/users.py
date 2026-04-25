@@ -44,6 +44,28 @@ def update_user(id):
     db.session.commit()
     return jsonify(user.to_dict())
 
+@users_bp.route("/<int:id>", methods=["DELETE"])
+def delete_user(id):
+    user = User.query.get_or_404(id)
+    # Delete all related data
+    from models.order import Order
+    from models.favorite import Favorite, TailorDressLink
+    from models.measurement import Measurement
+    from models.tailor_customer import TailorCustomer, TailorMeasurement
+    from models.dress_post import DressPost
+    Order.query.filter_by(customer_id=id).delete()
+    Order.query.filter_by(tailor_id=id).delete()
+    Favorite.query.filter_by(user_id=id).delete()
+    Measurement.query.filter_by(user_id=id).delete()
+    TailorCustomer.query.filter_by(tailor_id=id).delete()
+    for post in DressPost.query.filter_by(uploader_id=id).all():
+        TailorDressLink.query.filter_by(post_id=post.id).delete()
+        Favorite.query.filter_by(post_id=post.id).delete()
+        db.session.delete(post)
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({"message": "Account deleted"})
+
 @users_bp.route("/tailors", methods=["GET"])
 def get_public_tailors():
     tailors = User.query.filter_by(role='tailor', is_public=True).all()

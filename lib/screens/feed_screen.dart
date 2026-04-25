@@ -16,8 +16,11 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   List _posts = [];
+  List _filteredPosts = [];
   bool _isLoading = true;
   String _selectedCategory = 'All';
+  final TextEditingController _searchCtrl = TextEditingController();
+  String _searchQuery = '';
   final List<String> _categories = [
     'All', 'Ankara', 'Kaftan', 'Formal', 'Casual',
     'Wedding', 'Traditional', 'Corporate', 'Evening'
@@ -40,6 +43,7 @@ class _FeedScreenState extends State<FeedScreen> {
       if (!mounted) return;
       setState(() {
         _posts = jsonDecode(res.body);
+        _filteredPosts = _posts;
         _isLoading = false;
       });
     } catch (e) {
@@ -98,7 +102,31 @@ class _FeedScreenState extends State<FeedScreen> {
                 TextField(controller: titleCtrl,
                   decoration: const InputDecoration(labelText: 'Title',
                     prefixIcon: Icon(Icons.title, color: Color(0xFF1B5E20)))),
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TextField(
+                controller: _searchCtrl,
+                onChanged: _onSearch,
+                decoration: InputDecoration(
+                  hintText: 'Search styles...',
+                  hintStyle: const TextStyle(color: Color(0xFF8E8E93), fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF8E8E93)),
+                  suffixIcon: _searchQuery.isNotEmpty
+                    ? GestureDetector(
+                        onTap: () { _searchCtrl.clear(); _onSearch(''); },
+                        child: const Icon(Icons.clear, color: Color(0xFF8E8E93)))
+                    : null,
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
                 TextField(controller: descCtrl, maxLines: 2,
                   decoration: const InputDecoration(labelText: 'Description',
                     prefixIcon: Icon(Icons.description_outlined, color: Color(0xFF1B5E20)))),
@@ -152,6 +180,24 @@ class _FeedScreenState extends State<FeedScreen> {
         ),
       ),
     );
+  }
+
+  void _onSearch(String query) {
+    setState(() {
+      _searchQuery = query;
+      _filteredPosts = _posts.where((p) {
+        final title = (p['title'] ?? '').toLowerCase();
+        final category = (p['category'] ?? '').toLowerCase();
+        final q = query.toLowerCase();
+        return title.contains(q) || category.contains(q);
+      }).toList();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchCtrl.dispose();
+    super.dispose();
   }
 
   @override
@@ -260,9 +306,9 @@ class _FeedScreenState extends State<FeedScreen> {
                           mainAxisSpacing: 12,
                           childAspectRatio: 0.75,
                         ),
-                        itemCount: _posts.length,
+                        itemCount: _filteredPosts.length,
                         itemBuilder: (ctx, i) => StyleCard(
-                          post: _posts[i],
+                          post: _filteredPosts[i],
                           onTap: () => Navigator.push(context,
                             MaterialPageRoute(builder: (_) =>
                               DressDetailScreen(post: _posts[i]))),
