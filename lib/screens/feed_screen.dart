@@ -53,7 +53,7 @@ class _FeedScreenState extends State<FeedScreen> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Delete Style'),
-        content: Text('Delete "\${post['title']}"? This cannot be undone.'),
+        content: Text('Delete this style? This cannot be undone.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')),
           TextButton(onPressed: () => Navigator.pop(ctx, true),
@@ -63,7 +63,7 @@ class _FeedScreenState extends State<FeedScreen> {
     );
     if (confirm != true) return;
     await http.delete(Uri.parse(
-      'https://smart-tailor-backend-mi4z.onrender.com/api/posts/\${post['id']}'));
+      'https://smart-tailor-backend-mi4z.onrender.com/api/posts/${post["id"]}'));
     _fetchPosts();
     if (mounted) ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Style deleted'), backgroundColor: Colors.red));
@@ -127,7 +127,7 @@ class _FeedScreenState extends State<FeedScreen> {
                   child: ElevatedButton(
                     onPressed: () async {
                       await http.patch(
-                        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/\${post['id']}'),
+                        Uri.parse('https://smart-tailor-backend-mi4z.onrender.com/api/posts/${post["id"]}'),
                         headers: {'Content-Type': 'application/json'},
                         body: jsonEncode({
                           'title': titleCtrl.text.trim(),
