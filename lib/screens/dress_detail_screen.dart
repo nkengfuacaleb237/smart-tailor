@@ -185,8 +185,10 @@ class _DressDetailScreenState extends State<DressDetailScreen> {
                         children: [
                           Icon(Icons.info_outline, color: Color(0xFF8E8E93), size: 16),
                           SizedBox(width: 8),
-                          Text('No saved measurements. You can add them in the Measure tab.',
-                            style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12)),
+                          Expanded(
+                            child: Text('No saved measurements. You can add them in the Measure tab.',
+                              style: TextStyle(color: Color(0xFF8E8E93), fontSize: 12)),
+                          ),
                         ],
                       ),
                     )
