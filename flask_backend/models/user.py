@@ -18,6 +18,7 @@ class User(db.Model):
     location = db.Column(db.String(200), default='')
     contact_info = db.Column(db.String(300), default='')
     is_public = db.Column(db.Boolean, default=True)
+    password_hash = db.Column(db.String(200), default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     measurements = db.relationship('Measurement', backref='user', lazy=True, foreign_keys='Measurement.user_id')
